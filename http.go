@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/tent/tent-client-go"
@@ -60,7 +61,13 @@ func requestMarkdown(r *request) string {
 	buf.Write([]byte("```text\n"))
 	buf.WriteString(r.req.Method)
 	buf.WriteByte(' ')
-	buf.WriteString(r.req.URL.RequestURI())
+
+	uri := r.req.URL.RequestURI()
+	if strings.HasPrefix(uri, "http") {
+		uri = "/" + strings.SplitN(uri[8:], "/", 2)[1]
+	}
+	buf.WriteString(uri)
+
 	buf.WriteString(" HTTP/1.1\n")
 	r.req.Header.WriteSubset(buf, excludeHeaders)
 	buf.Write([]byte("\n```\n"))
