@@ -68,7 +68,7 @@ func requestMarkdown(r *request) string {
 	// request body
 	if r.req.Body != nil {
 		buf.Write([]byte("```json\n"))
-		buf.ReadFrom(r.reqBody)
+		json.Indent(buf, r.reqBody.Bytes(), "", "  ")
 		buf.Write([]byte("\n```\n"))
 	}
 
