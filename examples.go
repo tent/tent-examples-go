@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/tent/tent-client-go"
@@ -32,7 +34,15 @@ func createApp() []*request {
 	})
 	err := client.CreatePost(post)
 	maybePanic(err)
-	_, err = post.GetCredentials()
+	client.Credentials, _, err = post.LinkedCredentials()
+	maybePanic(err)
+	oauthURL, _ := meta.Servers[0].URLs.OAuthURL(post.ID, "d173d2bb868a")
+	req, _ := http.NewRequest("GET", oauthURL, nil)
+	res, err := tent.HTTP.Transport.RoundTrip(req)
+	maybePanic(err)
+	u, err := url.Parse(res.Header.Get("Location"))
+	maybePanic(err)
+	client.Credentials, err = client.RequestAccessToken(u.Query().Get("code"))
 	maybePanic(err)
 	return getRequests()
 }
@@ -48,6 +58,8 @@ func main() {
 	appReqs := createApp()
 	examples["app_create"] = appReqs[0]
 	examples["app_credentials"] = appReqs[1]
+	examples["oauth_redirect"] = appReqs[2]
+	examples["oauth_token"] = appReqs[3]
 
 	res := make(map[string]string)
 	for k, v := range examples {
