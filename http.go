@@ -74,9 +74,7 @@ func requestMarkdown(r *request) string {
 
 	// request body
 	if r.req.Body != nil {
-		buf.Write([]byte("```json\n"))
-		json.Indent(buf, r.reqBody.Bytes(), "", "  ")
-		buf.Write([]byte("\n```\n"))
+		fence(buf, r.reqBody.Bytes())
 	}
 
 	// response headers
@@ -91,12 +89,21 @@ func requestMarkdown(r *request) string {
 	// response body
 	resBody := r.resBody.Bytes()
 	if len(resBody) > 0 {
-		buf.Write([]byte("```json\n"))
-		json.Indent(buf, resBody, "", "  ")
-		buf.Write([]byte("\n```\n"))
+		fence(buf, resBody)
 	}
 
 	return buf.String()
+}
+
+func fence(buf *bytes.Buffer, data []byte) {
+	if len(data) > 0 && data[0] == '{' {
+		buf.Write([]byte("```json\n"))
+		json.Indent(buf, data, "", "  ")
+	} else {
+		buf.Write([]byte("```text\n"))
+		buf.Write(data)
+	}
+	buf.Write([]byte("\n```\n"))
 }
 
 func getRequests() []*request {
