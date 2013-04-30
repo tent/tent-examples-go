@@ -77,6 +77,11 @@ func newMultipartPost() []*request {
 	maybePanic(err)
 	post.Attachments[0].Close()
 
+	body, err := client.GetPostAttachment(post.Entity, post.ID, "latest", post.Attachments[0].Name, "*/*")
+	maybePanic(err)
+	_, err = io.Copy(ioutil.Discard, post.Attachments[0])
+	body.Close()
+
 	return getRequests()
 }
 
@@ -99,6 +104,7 @@ func main() {
 	multipartReqs := newMultipartPost()
 	examples["new_multipart_post"] = multipartReqs[0]
 	examples["get_attachment"] = multipartReqs[1]
+	examples["get_post_attachment"] = multipartReqs[2]
 
 	res := make(map[string]string)
 	for k, v := range examples {
