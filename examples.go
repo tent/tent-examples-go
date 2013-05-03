@@ -85,6 +85,12 @@ func newMultipartPost() []*request {
 	return getRequests()
 }
 
+func getPostsFeed() *request {
+	_, err := client.GetFeed(tent.NewPostsFeedQuery().Limit(2))
+	maybePanic(err)
+	return getRequests()[0]
+}
+
 func main() {
 	examples := make(map[string]*request)
 	tent.HTTP.Transport = &roundTripRecorder{roundTripper: tent.HTTP.Transport}
@@ -105,6 +111,8 @@ func main() {
 	examples["new_multipart_post"] = multipartReqs[0]
 	examples["get_attachment"] = multipartReqs[1]
 	examples["get_post_attachment"] = multipartReqs[2]
+
+	examples["posts_feed"] = getPostsFeed()
 
 	res := make(map[string]string)
 	for k, v := range examples {
