@@ -85,10 +85,50 @@ func newMultipartPost() []*request {
 	return getRequests()
 }
 
-func getPostsFeed() *request {
-	_, err := client.GetFeed(tent.NewPostsFeedQuery().Limit(2))
+func getPostsFeed() []*request {
+	q := tent.NewPostsFeedQuery().Limit(2)
+	res, err := client.GetFeed(q, nil)
 	maybePanic(err)
-	return getRequests()[0]
+	_, err = client.GetFeed(q, &tent.PageRequest{ETag: res.ETag})
+	maybePanic(err)
+	_, err = client.GetFeed(q, &tent.PageRequest{CountOnly: true})
+	return getRequests()
+}
+
+func getPost() *request {
+	return nil
+}
+
+func getPostMentions() *request {
+	return nil
+}
+
+func getPostVersions() *request {
+	return nil
+}
+
+func getPostChildren() *request {
+	return nil
+}
+
+func newPostVersion() *request {
+	return nil
+}
+
+func getAttachment() *request {
+	return nil
+}
+
+func getPostAttachment() *request {
+	return nil
+}
+
+func batchRequest() *request {
+	return nil
+}
+
+func serverInfo() *request {
+	return nil
 }
 
 func main() {
@@ -112,7 +152,10 @@ func main() {
 	examples["get_attachment"] = multipartReqs[1]
 	examples["get_post_attachment"] = multipartReqs[2]
 
-	examples["posts_feed"] = getPostsFeed()
+	feedReqs := getPostsFeed()
+	examples["posts_feed"] = feedReqs[0]
+	examples["posts_feed_304"] = feedReqs[1]
+	examples["posts_feed_count"] = feedReqs[2]
 
 	res := make(map[string]string)
 	for k, v := range examples {
