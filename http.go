@@ -83,6 +83,8 @@ func requestMarkdown(r *request) string {
 	buf.WriteByte(' ')
 	buf.WriteString(r.res.Status)
 	buf.Write([]byte("\n"))
+	r.res.Header["ETag"] = r.res.Header["Etag"]
+	delete(r.res.Header, "Etag")
 	r.res.Header.WriteSubset(buf, excludeHeaders)
 	buf.Write([]byte("\n```\n"))
 
