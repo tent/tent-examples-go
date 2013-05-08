@@ -49,12 +49,15 @@ func createApp() []*request {
 	return getRequests()
 }
 
-func newPost() *request {
-	post := &tent.Post{
+func statusPost() *tent.Post {
+	return &tent.Post{
 		Type:    "https://tent.io/types/status/v0#",
 		Content: []byte(`{"text": "example post"}`),
 	}
-	err := client.CreatePost(post)
+}
+
+func newPost() *request {
+	err := client.CreatePost(statusPost())
 	maybePanic(err)
 	return getRequests()[0]
 }
@@ -89,7 +92,7 @@ func getPostsFeed() []*request {
 	q := tent.NewPostsFeedQuery().Limit(2)
 	res, err := client.GetFeed(q, nil)
 	maybePanic(err)
-	_, err = client.GetFeed(q, &tent.PageRequest{ETag: res.ETag})
+	_, err = client.GetFeed(q, &tent.PageRequest{ETag: res.Header.ETag})
 	maybePanic(err)
 	_, err = client.GetFeed(q, &tent.PageRequest{CountOnly: true})
 	return getRequests()
@@ -99,27 +102,49 @@ func getPost() *request {
 	return nil
 }
 
-func getPostMentions() *request {
-	return nil
+func getPostMentions() []*request {
+	primary := statusPost()
+	err := client.CreatePost(primary)
+	maybePanic(err)
+	for i := 0; i < 5; i++ {
+		post := statusPost()
+		post.Mentions = []tent.PostMention{{Post: primary.ID}}
+		err = client.CreatePost(post)
+		maybePanic(err)
+	}
+	_, err = client.GetPostMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
+	maybePanic(err)
+	_, err = client.GetPostMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	maybePanic(err)
+	reqs := getRequests()
+	return reqs[len(reqs)-2:]
 }
 
-func getPostVersions() *request {
-	return nil
-}
-
-func getPostChildren() *request {
-	return nil
+func getPostVersions() []*request {
+	primary := statusPost()
+	err := client.CreatePost(primary)
+	maybePanic(err)
+	for i := 0; i < 5; i++ {
+		post := statusPost()
+		post.ID = primary.ID
+		post.Entity = primary.Entity
+		post.Version = &tent.PostVersion{Parents: []tent.PostVersionParent{{Version: primary.Version.ID}}}
+		err = client.CreatePost(post)
+		maybePanic(err)
+	}
+	_, err = client.GetPostVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
+	maybePanic(err)
+	_, err = client.GetPostVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	maybePanic(err)
+	_, err = client.GetPostChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2})
+	maybePanic(err)
+	_, err = client.GetPostChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	maybePanic(err)
+	reqs := getRequests()
+	return reqs[len(reqs)-5:]
 }
 
 func newPostVersion() *request {
-	return nil
-}
-
-func getAttachment() *request {
-	return nil
-}
-
-func getPostAttachment() *request {
 	return nil
 }
 
@@ -156,6 +181,17 @@ func main() {
 	examples["posts_feed"] = feedReqs[0]
 	examples["posts_feed_304"] = feedReqs[1]
 	examples["posts_feed_count"] = feedReqs[2]
+
+	mentionReqs := getPostMentions()
+	examples["post_mentions"] = mentionReqs[0]
+	examples["post_mentions_count"] = mentionReqs[1]
+
+	versionReqs := getPostVersions()
+	examples["new_post_version"] = versionReqs[0]
+	examples["post_versions"] = versionReqs[1]
+	examples["post_versions_count"] = versionReqs[2]
+	examples["post_children"] = versionReqs[3]
+	examples["post_children_count"] = versionReqs[4]
 
 	res := make(map[string]string)
 	for k, v := range examples {
