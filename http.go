@@ -68,7 +68,7 @@ func requestMarkdown(r *request) string {
 	}
 	buf.WriteString(uri)
 
-	buf.WriteString(" HTTP/1.1\n")
+	buf.WriteString(" HTTP/1.1\r\n")
 	r.req.Header.WriteSubset(buf, excludeHeaders)
 	buf.Truncate(buf.Len() - 2) // remove the trailing \r\n from headers
 	buf.Write([]byte("\n```\n"))
@@ -83,7 +83,7 @@ func requestMarkdown(r *request) string {
 	buf.WriteString(r.res.Proto)
 	buf.WriteByte(' ')
 	buf.WriteString(r.res.Status)
-	buf.Write([]byte("\n"))
+	buf.Write([]byte("\r\n"))
 	r.res.Header["ETag"] = r.res.Header["Etag"]
 	delete(r.res.Header, "Etag")
 	r.res.Header.WriteSubset(buf, excludeHeaders)
