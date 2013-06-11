@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -52,7 +53,7 @@ func createApp() []*request {
 func statusPost() *tent.Post {
 	return &tent.Post{
 		Type:    "https://tent.io/types/status/v0#",
-		Content: []byte(`{"text": "example post"}`),
+		Content: []byte(fmt.Sprintf(`{"text": "example post %d"}`, rand.Int())),
 	}
 }
 
@@ -112,9 +113,9 @@ func getPostMentions() []*request {
 		err = client.CreatePost(post)
 		maybePanic(err)
 	}
-	_, err = client.GetPostMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
+	_, err = client.GetMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
 	maybePanic(err)
-	_, err = client.GetPostMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	_, err = client.GetMentions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
 	maybePanic(err)
 	reqs := getRequests()
 	return reqs[len(reqs)-2:]
@@ -132,16 +133,45 @@ func getPostVersions() []*request {
 		err = client.CreatePost(post)
 		maybePanic(err)
 	}
-	_, err = client.GetPostVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
+	_, err = client.GetVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2})
 	maybePanic(err)
-	_, err = client.GetPostVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	_, err = client.GetVersions(primary.Entity, primary.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
 	maybePanic(err)
-	_, err = client.GetPostChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2})
+	_, err = client.GetChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2})
 	maybePanic(err)
-	_, err = client.GetPostChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
+	_, err = client.GetChildren(primary.Entity, primary.ID, primary.Version.ID, &tent.PageRequest{Limit: 2, CountOnly: true})
 	maybePanic(err)
 	reqs := getRequests()
 	return reqs[len(reqs)-5:]
+}
+
+func getPostRefs() []*request {
+	postIDs := make([]string, 5)
+	for i := 0; i < 5; i++ {
+		post := statusPost()
+		err := client.CreatePost(post)
+		maybePanic(err)
+		postIDs[i] = post.ID
+	}
+
+	post := statusPost()
+	post.Refs = []tent.PostRef{{Post: postIDs[0]}, {Post: postIDs[1]}}
+	err := client.CreatePost(post)
+	maybePanic(err)
+
+	post = statusPost()
+	post.Refs = []tent.PostRef{{Post: postIDs[1]}, {Post: postIDs[2]}, {Post: postIDs[3]}, {Post: postIDs[4]}}
+	err = client.CreatePost(post)
+	maybePanic(err)
+
+	_, err = client.GetFeed(tent.NewPostsFeedQuery().MaxRefs(2).Limit(2), nil)
+	maybePanic(err)
+
+	_, err = client.GetPost(post.Entity, post.ID, "", &tent.PostRequest{MaxRefs: 4})
+	maybePanic(err)
+
+	reqs := getRequests()
+	return reqs[len(reqs)-2:]
 }
 
 func newPostVersion() *request {
@@ -192,6 +222,10 @@ func main() {
 	examples["post_versions_count"] = versionReqs[2]
 	examples["post_children"] = versionReqs[3]
 	examples["post_children_count"] = versionReqs[4]
+
+	refReqs := getPostRefs()
+	examples["posts_feed_refs"] = refReqs[0]
+	examples["post_refs"] = refReqs[1]
 
 	res := make(map[string]string)
 	for k, v := range examples {
