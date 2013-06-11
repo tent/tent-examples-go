@@ -63,6 +63,10 @@ func newPost() *request {
 	return getRequests()[0]
 }
 
+type stringReader struct{ *strings.Reader }
+
+func (r stringReader) Len() int64 { return int64(r.Reader.Len()) }
+
 func newMultipartPost() []*request {
 	post := &tent.Post{
 		Type:    "https://tent.io/types/photo/v0#",
@@ -71,7 +75,7 @@ func newMultipartPost() []*request {
 			Name:        "example.jpeg",
 			Category:    "photo",
 			ContentType: "image/jpeg",
-			Data:        strings.NewReader("example attachment data"),
+			Data:        stringReader{strings.NewReader("example attachment data")},
 		}},
 	}
 	err := client.CreatePost(post)
