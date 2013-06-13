@@ -85,7 +85,7 @@ func newMultipartPost() []*request {
 	maybePanic(err)
 	post.Attachments[0].Close()
 
-	body, err := client.GetPostAttachment(post.Entity, post.ID, "latest", post.Attachments[0].Name, "*/*")
+	body, err := client.GetPostAttachment(post.Entity, post.ID, "", post.Attachments[0].Name, "*/*")
 	maybePanic(err)
 	_, err = io.Copy(ioutil.Discard, post.Attachments[0])
 	body.Close()
