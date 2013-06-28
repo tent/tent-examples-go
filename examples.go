@@ -29,7 +29,7 @@ func createApp() []*request {
 	post := tent.NewAppPost(&tent.App{
 		Name: "Example App",
 		URL:  "https://app.example.com",
-		PostTypes: tent.AppPostTypes{
+		Types: tent.AppTypes{
 			Write: []string{"https://tent.io/types/status/v0", "https://tent.io/types/photo/v0"},
 			Read:  []string{"https://tent.io/types/app/v0"},
 		},
