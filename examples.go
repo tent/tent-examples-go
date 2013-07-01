@@ -85,7 +85,7 @@ func newMultipartPost() []*request {
 	maybePanic(err)
 	post.Attachments[0].Close()
 
-	body, err := client.GetPostAttachment(post.Entity, post.ID, "", post.Attachments[0].Name, "*/*")
+	body, _, err := client.GetPostAttachment(post.Entity, post.ID, "", post.Attachments[0].Name, "*/*")
 	maybePanic(err)
 	_, err = io.Copy(ioutil.Discard, post.Attachments[0])
 	body.Close()
@@ -242,7 +242,7 @@ func main() {
 
 func maybePanic(err error) {
 	if err != nil {
-		if resErr, ok := err.(*tent.BadResponseError); ok && resErr.TentError != nil {
+		if resErr, ok := err.(*tent.ResponseError); ok && resErr.TentError != nil {
 			fmt.Println(resErr.TentError)
 		}
 		panic(err)
